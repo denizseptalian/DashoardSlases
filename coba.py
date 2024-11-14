@@ -4,19 +4,19 @@ import plotly.express as px
 
 # Pengaturan halaman
 st.set_page_config(
-    page_title="Dasboard Penjualan penjualan benih dan pupuk Gelar Rasa 2024",
+    page_title="Dasbor Analitik",
     page_icon=":bar_chart:",
     layout="wide"
 )
 
-st.title(":robot_face: Dasbor Penjualan Streamlit")
-st.markdown("Untuk Memasukan Data Baru Harap menggunakan tamplate data Berikut")
+st.title(":robot_face: Dasboard Analitik Penjualan Benih dan Pupuk Gelar Rasa 2024")
+st.markdown("Team Maba Muda")
 
 # Path data default
 DEFAULT_DATA_PATH = 'sales.xlsx'  # Ganti dengan path file data default Anda
 
 # Bagian unggah file
-st.header("Unggah File")
+st.header("Jika Ingin Mengunkan Daa Baru harap sesuaikan dengan Tamplate berikut : https://s.id/TamplateData")
 uploaded_file = st.file_uploader(
     label="Unggah file Excel Anda", type="xlsx"
 )
@@ -81,8 +81,8 @@ else:
         st.plotly_chart(fig, use_container_width=True)
 
     def plot_top_sales_reps():
-        top_sales_reps = filtered_data.groupby(['Firstnames', 'Surnames'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
-        fig = px.bar(top_sales_reps, x='Firstnames', y='Sales Amount (in US$)', color='Surnames', title="3 Perwakilan Penjualan Teratas Berdasarkan Total Penjualan")
+        top_sales_reps = filtered_data.groupby(['Firstnames', 'Gender'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
+        fig = px.bar(top_sales_reps, x='Firstnames', y='Sales Amount (in US$)', color='Gender', title="3 Perwakilan Penjualan Teratas Berdasarkan Total Penjualan")
         st.plotly_chart(fig, use_container_width=True)
 
     def plot_sales_by_customer_type():
@@ -91,30 +91,34 @@ else:
         st.plotly_chart(fig, use_container_width=True)
 
     def plot_monthly_sales_proportion():
-    # Pastikan kolom bulan dikonversi ke datetime jika dalam format string
-    filtered_data['Month'] = pd.to_datetime(filtered_data['Month'], format='%b').dt.month
-    
-    # Mengelompokkan data berdasarkan jenis pelanggan dan bulan
-    monthly_sales = filtered_data.groupby(['CustomerType', 'Month'])['Sales Amount (in US$)'].sum().reset_index()
-    
-    # Membuat plot area dengan urutan warna yang benar
-    fig = px.area(monthly_sales, 
-                  x='Month', 
-                  y='Sales Amount (in US$)', 
-                  color='CustomerType', 
-                  title="Proporsi Penjualan Bulanan Berdasarkan Jenis Pelanggan", 
-                  line_group='CustomerType',
-                  color_discrete_map='identity')  # Menjaga urutan warna berdasarkan kategori CustomerType
+        # Ensure the 'Month' column is correctly interpreted as a numeric month
+        if filtered_data['Month'].dtype == 'object':
+            filtered_data['Month'] = pd.to_datetime(filtered_data['Month'], format='%b').dt.month
 
-    # Menampilkan grafik
-    st.plotly_chart(fig, use_container_width=True)
+        # Aggregate monthly sales by customer type
+        monthly_sales = filtered_data.groupby(['Month', 'CustomerType'])['Sales Amount (in US$)'].sum().reset_index()
 
+        # Plot using a line chart to show trends across months for each customer type
+        fig = px.line(
+            monthly_sales,
+            x='Month',
+            y='Sales Amount (in US$)',
+            color='CustomerType',
+            title="Monthly Sales Trend by Customer Type",
+            labels={'Month': 'Month', 'Sales Amount (in US$)': 'Sales Amount (in USD)', 'CustomerType': 'Customer Type'}
+        )
+
+        # Ensure month order is correct
+        fig.update_xaxes(type='category', tickvals=list(range(1, 13)), ticktext=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+
+        # Display the plot in Streamlit
+        st.plotly_chart(fig, use_container_width=True)
 
     def plot_top_reps_performance():
         # Filter untuk perwakilan teratas berdasarkan data penjualan
-        top_sales_reps = filtered_data.groupby(['Firstnames', 'Surnames'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
-        top_reps_ids = top_sales_reps[['Firstnames', 'Surnames']].apply(lambda x: ' '.join(x), axis=1).tolist()
-        filtered_data['FullName'] = filtered_data['Firstnames'] + ' ' + filtered_data['Surnames']
+        top_sales_reps = filtered_data.groupby(['Firstnames', 'Gender'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
+        top_reps_ids = top_sales_reps[['Firstnames', 'Gender']].apply(lambda x: ' '.join(x), axis=1).tolist()
+        filtered_data['FullName'] = filtered_data['Firstnames'] + ' ' + filtered_data['Gender']
         top_reps_data = filtered_data[filtered_data['FullName'].isin(top_reps_ids)]
         rep_sales = top_reps_data.groupby(['Year', 'FullName'])['Sales Amount (in US$)'].sum().reset_index()
         fig = px.line(rep_sales, x='Year', y='Sales Amount (in US$)', color='FullName', title="Kinerja Perwakilan Penjualan Teratas Selama Beberapa Tahun")
@@ -138,7 +142,7 @@ else:
 
     # Visualisasi Data Tambahan dengan Tab
     st.subheader("Visualisasi Data Tambahan")
-    tab1, tab2, tab3 = st.tabs(["Rata-rata Proporsi Penjualan Bulanan", "Perwakilan Penjualan Teratas", "Kinerja Perwakilan Penjualan Teratas Selama Waktu"])
+    tab1, tab2, tab3 = st.tabs(["Proporsi Penjualan Bulanan", "Perwakilan Penjualan Teratas", "Kinerja Perwakilan Penjualan Teratas Selama Waktu"])
 
     with tab1:
         plot_monthly_sales_proportion()
