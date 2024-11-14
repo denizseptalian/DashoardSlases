@@ -91,11 +91,24 @@ else:
         st.plotly_chart(fig, use_container_width=True)
 
     def plot_monthly_sales_proportion():
-        # Pastikan kolom bulan dikonversi ke datetime jika dalam format string
-        filtered_data['Month'] = pd.to_datetime(filtered_data['Month'], format='%b').dt.month
-        monthly_sales = filtered_data.groupby(['CustomerType', 'Month'])['Sales Amount (in US$)'].sum().reset_index()
-        fig = px.area(monthly_sales, x='Month', y='Sales Amount (in US$)', color='CustomerType', title="Proporsi Penjualan Bulanan Berdasarkan Jenis Pelanggan", line_group='CustomerType')
-        st.plotly_chart(fig, use_container_width=True)
+    # Pastikan kolom bulan dikonversi ke datetime jika dalam format string
+    filtered_data['Month'] = pd.to_datetime(filtered_data['Month'], format='%b').dt.month
+    
+    # Mengelompokkan data berdasarkan jenis pelanggan dan bulan
+    monthly_sales = filtered_data.groupby(['CustomerType', 'Month'])['Sales Amount (in US$)'].sum().reset_index()
+    
+    # Membuat plot area dengan urutan warna yang benar
+    fig = px.area(monthly_sales, 
+                  x='Month', 
+                  y='Sales Amount (in US$)', 
+                  color='CustomerType', 
+                  title="Proporsi Penjualan Bulanan Berdasarkan Jenis Pelanggan", 
+                  line_group='CustomerType',
+                  color_discrete_map='identity')  # Menjaga urutan warna berdasarkan kategori CustomerType
+
+    # Menampilkan grafik
+    st.plotly_chart(fig, use_container_width=True)
+
 
     def plot_top_reps_performance():
         # Filter untuk perwakilan teratas berdasarkan data penjualan
