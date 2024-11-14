@@ -4,13 +4,13 @@ import plotly.express as px
 
 # Pengaturan halaman
 st.set_page_config(
-    page_title="Dasbor Penjualan",
+    page_title="Dasboard Penjualan penjualan benih dan pupuk Gelar Rasa 2024",
     page_icon=":bar_chart:",
     layout="wide"
 )
 
 st.title(":robot_face: Dasbor Penjualan Streamlit")
-st.markdown("_Versi Prototipe v1.0.0_")
+st.markdown("Untuk Memasukan Data Baru Harap menggunakan tamplate data Berikut")
 
 # Path data default
 DEFAULT_DATA_PATH = 'sales.xlsx'  # Ganti dengan path file data default Anda
@@ -93,7 +93,7 @@ else:
     def plot_monthly_sales_proportion():
         # Pastikan kolom bulan dikonversi ke datetime jika dalam format string
         filtered_data['Month'] = pd.to_datetime(filtered_data['Month'], format='%b').dt.month
-        monthly_sales = filtered_data.groupby(['Month', 'CustomerType'])['Sales Amount (in US$)'].sum().reset_index()
+        monthly_sales = filtered_data.groupby(['CustomerType', 'Month'])['Sales Amount (in US$)'].sum().reset_index()
         fig = px.area(monthly_sales, x='Month', y='Sales Amount (in US$)', color='CustomerType', title="Proporsi Penjualan Bulanan Berdasarkan Jenis Pelanggan", line_group='CustomerType')
         st.plotly_chart(fig, use_container_width=True)
 
@@ -125,7 +125,7 @@ else:
 
     # Visualisasi Data Tambahan dengan Tab
     st.subheader("Visualisasi Data Tambahan")
-    tab1, tab2, tab3 = st.tabs(["Proporsi Penjualan Bulanan", "Perwakilan Penjualan Teratas", "Kinerja Perwakilan Penjualan Teratas Selama Waktu"])
+    tab1, tab2, tab3 = st.tabs(["Rata-rata Proporsi Penjualan Bulanan", "Perwakilan Penjualan Teratas", "Kinerja Perwakilan Penjualan Teratas Selama Waktu"])
 
     with tab1:
         plot_monthly_sales_proportion()
