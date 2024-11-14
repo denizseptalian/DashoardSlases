@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
 # Pengaturan halaman
 st.set_page_config(
@@ -47,68 +46,66 @@ else:
     salesrep_data = data['SalesRep']
 
     # Gabungkan data berdasarkan kolom pengenal umum
-    try:
-        merged_data = sales_data.merge(product_data, on='ProductID').merge(customer_data, on='CustomerID').merge(salesrep_data, on='SalesRepID')
-    except KeyError as e:
-        st.error(f"Kolom yang diperlukan tidak ditemukan: {e}")
+    merged_data = sales_data.merge(product_data, on='ProductID').merge(customer_data, on='CustomerID').merge(salesrep_data, on='SalesRepID')
 
-    # Pratinjau data
-    with st.expander("Pratinjau Data"):
-        st.dataframe(merged_data)
+    # Menambahkan filter tahun atau seluruh data
+    st.sidebar.header("Filter")
+    filter_option = st.sidebar.radio("Pilih Opsi Data", ["Data Seluruhnya", "Filter Berdasarkan Tahun"])
+
+    if filter_option == "Filter Berdasarkan Tahun":
+        if 'Year' in merged_data.columns:
+            available_years = merged_data['Year'].unique()
+            selected_year = st.sidebar.selectbox("Pilih Tahun", sorted(available_years))
+
+            # Filter data berdasarkan tahun yang dipilih
+            filtered_data = merged_data[merged_data['Year'] == selected_year]
+        else:
+            st.warning("Kolom 'Year' tidak tersedia dalam data.")
+            filtered_data = merged_data
+    else:
+        filtered_data = merged_data
+
+    # Pratinjau data yang telah difilter
+    with st.expander("Pratinjau Data Berdasarkan Pilihan Filter"):
+        st.dataframe(filtered_data)
 
     # Fungsi Visualisasi
     def plot_sales_per_product():
-        if 'Year' in merged_data.columns and 'Product Name' in merged_data.columns and 'Sales Amount (in US$)' in merged_data.columns:
-            total_sales_per_product = merged_data.groupby(['Year', 'Product Name'])['Sales Amount (in US$)'].sum().reset_index()
-            fig = px.bar(total_sales_per_product, x='Product Name', y='Sales Amount (in US$)', color='Year', title="Penjualan Tahunan per Produk")
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("Kolom yang diperlukan tidak tersedia untuk visualisasi ini.")
+        total_sales_per_product = filtered_data.groupby(['Year', 'Product Name'])['Sales Amount (in US$)'].sum().reset_index()
+        fig = px.bar(total_sales_per_product, x='Product Name', y='Sales Amount (in US$)', color='Year', title="Penjualan Tahunan per Produk")
+        st.plotly_chart(fig, use_container_width=True)
 
     def plot_avg_sales_per_customer():
-        if 'CustomerType' in merged_data.columns and 'Size' in merged_data.columns and 'Subsidized' in merged_data.columns:
-            avg_sales_per_customer = merged_data.groupby(['CustomerType', 'Size', 'Subsidized'])['Sales Amount (in US$)'].mean().reset_index()
-            fig = px.bar(avg_sales_per_customer, x='CustomerType', y='Sales Amount (in US$)', color='Size', barmode='group', title="Rata-Rata Penjualan Berdasarkan Karakteristik Pelanggan")
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("Kolom yang diperlukan tidak tersedia untuk visualisasi ini.")
+        avg_sales_per_customer = filtered_data.groupby(['CustomerType', 'Size', 'Subsidized'])['Sales Amount (in US$)'].mean().reset_index()
+        fig = px.bar(avg_sales_per_customer, x='CustomerType', y='Sales Amount (in US$)', color='Size', barmode='group', title="Rata-Rata Penjualan Berdasarkan Karakteristik Pelanggan")
+        st.plotly_chart(fig, use_container_width=True)
 
     def plot_top_sales_reps():
-        if 'Firstnames' in merged_data.columns and 'Surnames' in merged_data.columns:
-            top_sales_reps = merged_data.groupby(['Firstnames', 'Surnames'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
-            fig = px.bar(top_sales_reps, x='Firstnames', y='Sales Amount (in US$)', color='Surnames', title="3 Perwakilan Penjualan Teratas Berdasarkan Total Penjualan")
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("Kolom yang diperlukan tidak tersedia untuk visualisasi ini.")
+        top_sales_reps = filtered_data.groupby(['Firstnames', 'Surnames'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
+        fig = px.bar(top_sales_reps, x='Firstnames', y='Sales Amount (in US$)', color='Surnames', title="3 Perwakilan Penjualan Teratas Berdasarkan Total Penjualan")
+        st.plotly_chart(fig, use_container_width=True)
 
     def plot_sales_by_customer_type():
-        if 'Product Name' in merged_data.columns and 'CustomerType' in merged_data.columns:
-            product_sales = merged_data.groupby(['Product Name', 'CustomerType'])['Sales Amount (in US$)'].sum().reset_index()
-            fig = px.bar(product_sales, x='Product Name', y='Sales Amount (in US$)', color='CustomerType', title="Total Penjualan Setiap Produk Berdasarkan Jenis Pelanggan")
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("Kolom yang diperlukan tidak tersedia untuk visualisasi ini.")
+        product_sales = filtered_data.groupby(['Product Name', 'CustomerType'])['Sales Amount (in US$)'].sum().reset_index()
+        fig = px.bar(product_sales, x='Product Name', y='Sales Amount (in US$)', color='CustomerType', title="Total Penjualan Setiap Produk Berdasarkan Jenis Pelanggan")
+        st.plotly_chart(fig, use_container_width=True)
 
     def plot_monthly_sales_proportion():
-        if 'Month' in merged_data.columns and 'CustomerType' in merged_data.columns:
-            merged_data['Month'] = pd.to_datetime(merged_data['Month'], format='%b').dt.month
-            monthly_sales = merged_data.groupby(['Month', 'CustomerType'])['Sales Amount (in US$)'].sum().reset_index()
-            fig = px.area(monthly_sales, x='Month', y='Sales Amount (in US$)', color='CustomerType', title="Proporsi Penjualan Bulanan Berdasarkan Jenis Pelanggan", line_group='CustomerType')
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("Kolom yang diperlukan tidak tersedia untuk visualisasi ini.")
+        # Pastikan kolom bulan dikonversi ke datetime jika dalam format string
+        filtered_data['Month'] = pd.to_datetime(filtered_data['Month'], format='%b').dt.month
+        monthly_sales = filtered_data.groupby(['Month', 'CustomerType'])['Sales Amount (in US$)'].sum().reset_index()
+        fig = px.area(monthly_sales, x='Month', y='Sales Amount (in US$)', color='CustomerType', title="Proporsi Penjualan Bulanan Berdasarkan Jenis Pelanggan", line_group='CustomerType')
+        st.plotly_chart(fig, use_container_width=True)
 
     def plot_top_reps_performance():
-        if 'Firstnames' in merged_data.columns and 'Surnames' in merged_data.columns:
-            top_sales_reps = merged_data.groupby(['Firstnames', 'Surnames'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
-            top_reps_ids = top_sales_reps[['Firstnames', 'Surnames']].apply(lambda x: ' '.join(x), axis=1).tolist()
-            merged_data['FullName'] = merged_data['Firstnames'] + ' ' + merged_data['Surnames']
-            top_reps_data = merged_data[merged_data['FullName'].isin(top_reps_ids)]
-            rep_sales = top_reps_data.groupby(['Year', 'FullName'])['Sales Amount (in US$)'].sum().reset_index()
-            fig = px.line(rep_sales, x='Year', y='Sales Amount (in US$)', color='FullName', title="Kinerja Perwakilan Penjualan Teratas Selama Beberapa Tahun")
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("Kolom yang diperlukan tidak tersedia untuk visualisasi ini.")
+        # Filter untuk perwakilan teratas berdasarkan data penjualan
+        top_sales_reps = filtered_data.groupby(['Firstnames', 'Surnames'])['Sales Amount (in US$)'].sum().nlargest(3).reset_index()
+        top_reps_ids = top_sales_reps[['Firstnames', 'Surnames']].apply(lambda x: ' '.join(x), axis=1).tolist()
+        filtered_data['FullName'] = filtered_data['Firstnames'] + ' ' + filtered_data['Surnames']
+        top_reps_data = filtered_data[filtered_data['FullName'].isin(top_reps_ids)]
+        rep_sales = top_reps_data.groupby(['Year', 'FullName'])['Sales Amount (in US$)'].sum().reset_index()
+        fig = px.line(rep_sales, x='Year', y='Sales Amount (in US$)', color='FullName', title="Kinerja Perwakilan Penjualan Teratas Selama Beberapa Tahun")
+        st.plotly_chart(fig, use_container_width=True)
 
     # Layout Streamlit
     top_left_column, top_right_column = st.columns((2, 1))
@@ -141,7 +138,7 @@ else:
 
     # Bagian Analisis dan Pelaporan
     st.header("Analisis dan Pelaporan")
-    analysis = """
+    analysis = f"""
     Dari analisis ini, kami mengamati:
     1. **Penjualan Tahunan per Produk**: Total penjualan per produk menunjukkan tren yang menyoroti produk-produk utama dengan permintaan yang konsisten.
     2. **Tren Jenis Pelanggan**: Pelanggan besar cenderung melakukan pembelian dalam jumlah besar, dengan jenis pelanggan petani mendominasi pembelian benih.
