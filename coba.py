@@ -9,14 +9,14 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title(":robot_face: Dasboard Analitik Penjualan Benih dan Pupuk Gelar Rasa 2024")
+st.title(":robot_face: Dashboard Analitik Penjualan Benih dan Pupuk Gelar Rasa 2024")
 st.markdown("Team Maba Muda")
 
 # Default data path
 DEFAULT_DATA_PATH = 'sales.xlsx'  # Change to your default data file path
 
 # File upload section
-st.header("Jika Ingin Mengunkan Daa Baru harap sesuaikan dengan Tamplate berikut : https://s.id/TamplateData")
+st.header("Jika Ingin Mengunkan Data Baru harap sesuaikan dengan Tamplate berikut : https://s.id/TamplateData")
 uploaded_file = st.file_uploader(
     label="Unggah file Excel Anda", type="xlsx"
 )
